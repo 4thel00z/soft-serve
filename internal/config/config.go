@@ -47,7 +47,7 @@ func NewConfig(cfg *config.Config) (*Config, error) {
 	var yamlUsers string
 	var displayHost string
 	host := cfg.Host
-	port := cfg.Port
+	port := cfg.SSHPort
 	pk := cfg.InitialAdminKey
 	rs := git.NewRepoSource(cfg.RepoPath)
 	c := &Config{

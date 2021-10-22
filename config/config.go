@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/tls"
 	"log"
 
 	"github.com/meowgorithm/babyenv"
@@ -16,10 +17,13 @@ type Callbacks interface {
 // Config is the configuration for the soft-serve.
 type Config struct {
 	Host            string `env:"SOFT_SERVE_HOST" default:""`
-	Port            int    `env:"SOFT_SERVE_PORT" default:"23231"`
+	SSHPort         int    `env:"SOFT_SERVE_SSH_PORT" default:"23231"`
+	HTTPPort        int    `env:"SOFT_SERVE_HTTP_PORT" default:"23232"`
+	HTTPScheme      string `env:"SOFT_SERVE_HTTP_SCHEME" default:"http"`
 	KeyPath         string `env:"SOFT_SERVE_KEY_PATH" default:".ssh/soft_serve_server_ed25519"`
 	RepoPath        string `env:"SOFT_SERVE_REPO_PATH" default:".repos"`
 	InitialAdminKey string `env:"SOFT_SERVE_INITIAL_ADMIN_KEY" default:""`
+	TLSConfig       *tls.Config
 	Callbacks       Callbacks
 }
 
