@@ -7,9 +7,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/internal/config"
-	"github.com/charmbracelet/soft-serve/internal/tui/bubbles/repo"
-	"github.com/charmbracelet/soft-serve/internal/tui/bubbles/selection"
-	"github.com/charmbracelet/soft-serve/internal/tui/style"
+	gitui "github.com/charmbracelet/soft-serve/tui/bubbles/git"
+	gitypes "github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
+	"github.com/charmbracelet/soft-serve/tui/bubbles/selection"
+	"github.com/charmbracelet/soft-serve/tui/style"
 	"github.com/gliderlabs/ssh"
 )
 
@@ -34,7 +35,7 @@ type MenuEntry struct {
 	Name   string `json:"name"`
 	Note   string `json:"note"`
 	Repo   string `json:"repo"`
-	bubble *repo.Bubble
+	bubble *gitui.Bubble
 }
 
 type Bubble struct {
@@ -112,11 +113,11 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case selection.SelectedMsg:
 		b.activeBox = 1
 		rb := b.repoMenu[msg.Index].bubble
-		rb.GotoTop()
+		// rb.GotoTop()
 		b.boxes[1] = rb
 	case selection.ActiveMsg:
-		rb := b.repoMenu[msg.Index].bubble
-		rb.GotoTop()
+		// rb := b.repoMenu[msg.Index].bubble
+		// rb.GotoTop()
 		b.boxes[1] = b.repoMenu[msg.Index].bubble
 		cmds = append(cmds, func() tea.Msg {
 			return b.lastResize
@@ -143,7 +144,7 @@ func (b *Bubble) viewForBox(i int) string {
 			s = s.Copy().BorderForeground(b.styles.ActiveBorderColor)
 		}
 		return s.Render(box.View())
-	case *repo.Bubble:
+	case *gitui.Bubble:
 		// Repo details
 		box.Active = isActive
 		return box.View()
@@ -163,22 +164,25 @@ func (b Bubble) headerView() string {
 
 func (b Bubble) footerView() string {
 	w := &strings.Builder{}
-	var h []helpEntry
+	var h []gitypes.HelpEntry
 	switch b.state {
 	case errorState:
-		h = []helpEntry{{"q", "quit"}}
+		h = []gitypes.HelpEntry{{"q", "quit"}}
 	default:
-		h = []helpEntry{
+		h = []gitypes.HelpEntry{
 			{"tab", "section"},
 			{"↑/↓", "navigate"},
-			{"q", "quit"},
 		}
-		if _, ok := b.boxes[b.activeBox].(*repo.Bubble); ok {
-			h = append(h[:2], helpEntry{"f/b", "pgdown/pgup"}, h[2])
+		if box, ok := b.boxes[b.activeBox].(*gitui.Bubble); ok {
+			help := box.Help()
+			for _, he := range help {
+				h = append(h, he)
+			}
 		}
+		h = append(h, gitypes.HelpEntry{"q", "quit"})
 	}
 	for i, v := range h {
-		fmt.Fprint(w, v.Render(b.styles))
+		fmt.Fprint(w, helpEntryRender(v, b.styles))
 		if i != len(h)-1 {
 			fmt.Fprint(w, b.styles.HelpDivider)
 		}
@@ -219,11 +223,6 @@ func (b Bubble) View() string {
 	return b.styles.App.Render(s.String())
 }
 
-type helpEntry struct {
-	key string
-	val string
-}
-
-func (h helpEntry) Render(s *style.Styles) string {
-	return fmt.Sprintf("%s %s", s.HelpKey.Render(h.key), s.HelpValue.Render(h.val))
+func helpEntryRender(h gitypes.HelpEntry, s *style.Styles) string {
+	return fmt.Sprintf("%s %s", s.HelpKey.Render(h.Key), s.HelpValue.Render(h.Value))
 }

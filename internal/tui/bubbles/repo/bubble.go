@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/glamour/ansi"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/internal/git"
-	"github.com/charmbracelet/soft-serve/internal/tui/style"
+	"github.com/charmbracelet/soft-serve/tui/style"
 	"github.com/muesli/reflow/truncate"
 	"github.com/muesli/reflow/wrap"
 )
