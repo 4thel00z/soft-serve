@@ -1,10 +1,10 @@
 package log
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 	"time"
 
@@ -13,14 +13,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	gansi "github.com/charmbracelet/glamour/ansi"
-	"github.com/charmbracelet/soft-serve/internal/git"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/muesli/termenv"
 )
-
-const glamourMaxWidth = 120
 
 var (
 	diffChroma = &gansi.CodeBlockElement{
@@ -36,10 +34,12 @@ const (
 	commitView
 )
 
-type item git.RepoCommit
+type item struct {
+	*types.Commit
+}
 
 func (i item) Title() string {
-	lines := strings.Split(i.Commit.Message, "\n")
+	lines := strings.Split(i.Message, "\n")
 	if len(lines) > 0 {
 		return lines[0]
 	}
@@ -63,17 +63,17 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 	if index == m.Index() {
 		fmt.Fprint(w, d.style.LogItemSelector.MarginLeft(1).Render(">")+
-			d.style.LogItemHash.MarginLeft(1).Bold(true).Render(i.Commit.Hash.String()[:7])+
+			d.style.LogItemHash.MarginLeft(1).Bold(true).Render(i.Hash.String()[:7])+
 			d.style.LogItemActive.MarginLeft(1).Render(i.Title()))
 	} else {
 		fmt.Fprint(w, d.style.LogItemSelector.MarginLeft(1).Render(" ")+
-			d.style.LogItemHash.MarginLeft(1).Render(i.Commit.Hash.String()[:7])+
+			d.style.LogItemHash.MarginLeft(1).Render(i.Hash.String()[:7])+
 			d.style.LogItemInactive.MarginLeft(1).Render(i.Title()))
 	}
 }
 
 type Bubble struct {
-	repo           *git.Repo
+	repo           types.Repo
 	list           list.Model
 	pageView       pageView
 	commitViewport *vp.ViewportBubble
@@ -86,10 +86,10 @@ type Bubble struct {
 }
 
 // TODO enable filter
-func NewBubble(repo *git.Repo, style *style.Styles, width, widthMargin, height, heightMargin int) *Bubble {
+func NewBubble(repo types.Repo, style *style.Styles, width, widthMargin, height, heightMargin int) *Bubble {
 	items := make([]list.Item, 0)
 	for _, c := range repo.GetCommits(0) {
-		items = append(items, item(c))
+		items = append(items, item{c})
 	}
 	l := list.NewModel(items, itemDelegate{style}, width-widthMargin, height-heightMargin)
 	l.SetShowFilter(false)
@@ -187,60 +187,126 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return b, tea.Batch(cmds...)
 }
 
+func (b *Bubble) writePatch(fromTree *object.Tree, toTree *object.Tree, s io.StringWriter) {
+	ctx, cancel := context.WithTimeout(context.TODO(), time.Second*3)
+	defer cancel()
+	patch, err := toTree.PatchContext(ctx, fromTree)
+	if err == nil {
+		stats := patch.Stats()
+		s.WriteString("\n" + b.renderStats(stats))
+		p := strings.Builder{}
+		ps := patch.String()
+		if len(strings.Split(ps, "\n")) <= types.MaxDiffLines {
+			diffChroma.Code = ps
+			err = diffChroma.Render(&p, b.rctx)
+			if err == nil {
+				s.WriteString(fmt.Sprintf("\n%s", p.String()))
+			}
+		}
+	}
+}
+
 func (b *Bubble) commitView() string {
 	s := strings.Builder{}
 	commits := b.repo.GetCommits(0)
 	commit := commits[b.list.Index()]
 	s.WriteString(fmt.Sprintf("%s\n%s\n%s\n%s\n",
-		b.style.LogCommitHash.Render("commit "+commit.Commit.Hash.String()),
-		b.style.LogCommitAuthor.Render("Author: "+commit.Commit.Author.String()),
-		b.style.LogCommitDate.Render("Date:   "+commit.Commit.Committer.When.Format(time.UnixDate)),
-		b.style.LogCommitBody.Render(strings.TrimSpace(commit.Commit.Message)),
+		b.style.LogCommitHash.Render("commit "+commit.Hash.String()),
+		b.style.LogCommitAuthor.Render("Author: "+commit.Author.String()),
+		b.style.LogCommitDate.Render("Date:   "+commit.Committer.When.Format(time.UnixDate)),
+		b.style.LogCommitBody.Render(strings.TrimSpace(commit.Message)),
 	))
-	stats, err := commit.Commit.Stats()
+	fromTree, err := commit.Tree()
 	if err == nil {
-		s.WriteString(fmt.Sprintf("\n%s", b.renderStats(stats.String())))
-	}
-	if commit.Commit.NumParents() > 0 {
-		parent, err := commit.Commit.Parent(0)
-		if err == nil {
-			ctx, cancel := context.WithTimeout(context.TODO(), time.Second)
-			defer cancel()
-			patch, err := commit.Commit.PatchContext(ctx, parent)
+		toTree := &object.Tree{}
+		if commit.NumParents() != 0 {
+			firstParent, err := commit.Parents().Next()
 			if err == nil {
-				diffChroma.Code = patch.String()
-				p := strings.Builder{}
-				err := diffChroma.Render(&p, b.rctx)
+				toTree, err = firstParent.Tree()
 				if err == nil {
-					s.WriteString(fmt.Sprintf("\n%s", p.String()))
+					b.writePatch(fromTree, toTree, &s)
 				}
 			}
+		} else {
+			b.writePatch(fromTree, toTree, &s)
 		}
 	}
+
 	w := b.width - b.widthMargin
-	if w > glamourMaxWidth {
-		w = glamourMaxWidth
+	if w > types.GlamourMaxWidth {
+		w = types.GlamourMaxWidth
 	}
 	return b.style.LogCommit.MaxWidth(w).Render(s.String())
 }
 
-func (b *Bubble) renderStats(stats string) string {
-	rv := strings.Builder{}
-	s := bufio.NewScanner(strings.NewReader(stats))
-	for s.Scan() {
-		line := s.Text()
-		for _, c := range line {
-			if c == '+' {
-				rv.WriteString(b.style.LogCommitStatsAdd.Render(string(c)))
-			} else if c == '-' {
-				rv.WriteString(b.style.LogCommitStatsDel.Render(string(c)))
-			} else {
-				rv.WriteString(string(c))
-			}
+// copied from https://github.com/go-git/go-git/blob/v5.4.2/plumbing/object/patch.go#L241
+func (b *Bubble) renderStats(fileStats object.FileStats) string {
+	padLength := float64(len(" "))
+	newlineLength := float64(len("\n"))
+	separatorLength := float64(len("|"))
+	// Soft line length limit. The text length calculation below excludes
+	// length of the change number. Adding that would take it closer to 80,
+	// but probably not more than 80, until it's a huge number.
+	lineLength := 72.0
+
+	// Get the longest filename and longest total change.
+	var longestLength float64
+	var longestTotalChange float64
+	for _, fs := range fileStats {
+		if int(longestLength) < len(fs.Name) {
+			longestLength = float64(len(fs.Name))
 		}
-		rv.WriteString("\n")
+		totalChange := fs.Addition + fs.Deletion
+		if int(longestTotalChange) < totalChange {
+			longestTotalChange = float64(totalChange)
+		}
 	}
-	return rv.String()
+
+	// Parts of the output:
+	// <pad><filename><pad>|<pad><changeNumber><pad><+++/---><newline>
+	// example: " main.go | 10 +++++++--- "
+
+	// <pad><filename><pad>
+	leftTextLength := padLength + longestLength + padLength
+
+	// <pad><number><pad><+++++/-----><newline>
+	// Excluding number length here.
+	rightTextLength := padLength + padLength + newlineLength
+
+	totalTextArea := leftTextLength + separatorLength + rightTextLength
+	heightOfHistogram := lineLength - totalTextArea
+
+	// Scale the histogram.
+	var scaleFactor float64
+	if longestTotalChange > heightOfHistogram {
+		// Scale down to heightOfHistogram.
+		scaleFactor = longestTotalChange / heightOfHistogram
+	} else {
+		scaleFactor = 1.0
+	}
+
+	finalOutput := ""
+	for _, fs := range fileStats {
+		addn := float64(fs.Addition)
+		deln := float64(fs.Deletion)
+		addc := int(math.Floor(addn / scaleFactor))
+		delc := int(math.Floor(deln / scaleFactor))
+		if addc < 0 {
+			addc = 0
+		}
+		if delc < 0 {
+			delc = 0
+		}
+		adds := strings.Repeat("+", addc)
+		dels := strings.Repeat("-", delc)
+		finalOutput += fmt.Sprintf("%s | %d %s%s\n",
+			fs.Name,
+			(fs.Addition + fs.Deletion),
+			b.style.LogCommitStatsAdd.Render(adds),
+			b.style.LogCommitStatsDel.Render(dels))
+	}
+
+	return finalOutput
 }
 
 func (b *Bubble) View() string {

@@ -7,11 +7,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/internal/config"
-	gitui "github.com/charmbracelet/soft-serve/tui/bubbles/git"
 	gitypes "github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
+	"github.com/charmbracelet/soft-serve/tui/bubbles/repo"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/selection"
 	"github.com/charmbracelet/soft-serve/tui/style"
 	"github.com/gliderlabs/ssh"
+)
+
+const (
+	repoNameMaxWidth = 32
 )
 
 type sessionState int
@@ -35,7 +39,7 @@ type MenuEntry struct {
 	Name   string `json:"name"`
 	Note   string `json:"note"`
 	Repo   string `json:"repo"`
-	bubble *gitui.Bubble
+	bubble *repo.Bubble
 }
 
 type Bubble struct {
@@ -113,11 +117,8 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case selection.SelectedMsg:
 		b.activeBox = 1
 		rb := b.repoMenu[msg.Index].bubble
-		// rb.GotoTop()
 		b.boxes[1] = rb
 	case selection.ActiveMsg:
-		// rb := b.repoMenu[msg.Index].bubble
-		// rb.GotoTop()
 		b.boxes[1] = b.repoMenu[msg.Index].bubble
 		cmds = append(cmds, func() tea.Msg {
 			return b.lastResize
@@ -144,7 +145,7 @@ func (b *Bubble) viewForBox(i int) string {
 			s = s.Copy().BorderForeground(b.styles.ActiveBorderColor)
 		}
 		return s.Render(box.View())
-	case *gitui.Bubble:
+	case *repo.Bubble:
 		// Repo details
 		box.Active = isActive
 		return box.View()
@@ -173,7 +174,7 @@ func (b Bubble) footerView() string {
 			{"tab", "section"},
 			{"↑/↓", "navigate"},
 		}
-		if box, ok := b.boxes[b.activeBox].(*gitui.Bubble); ok {
+		if box, ok := b.boxes[b.activeBox].(*repo.Bubble); ok {
 			help := box.Help()
 			for _, he := range help {
 				h = append(h, he)

@@ -5,20 +5,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/soft-serve/internal/git"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
 )
 
-const (
-	glamourMaxWidth  = 120
-	repoNameMaxWidth = 32
-)
-
 type Bubble struct {
 	readmeViewport *vp.ViewportBubble
-	repo           *git.Repo
+	repo           types.Repo
 	styles         *style.Styles
 	height         int
 	heightMargin   int
@@ -26,7 +20,7 @@ type Bubble struct {
 	widthMargin    int
 }
 
-func NewBubble(repo *git.Repo, styles *style.Styles, width, wm, height, hm int) *Bubble {
+func NewBubble(repo types.Repo, styles *style.Styles, width, wm, height, hm int) *Bubble {
 	b := &Bubble{
 		readmeViewport: &vp.ViewportBubble{
 			Viewport: &viewport.Model{},
@@ -51,7 +45,7 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// XXX: if we find that longer readmes take more than a few
 		// milliseconds to render we may need to move Glamour rendering into a
 		// command.
-		md, err := b.glamourize(b.repo.Readme)
+		md, err := b.glamourize(b.repo.GetReadme())
 		if err != nil {
 			return b, nil
 		}
@@ -85,7 +79,7 @@ func (b *Bubble) Help() []types.HelpEntry {
 }
 
 func (b *Bubble) setupCmd() tea.Msg {
-	md, err := b.glamourize(b.repo.Readme)
+	md, err := b.glamourize(b.repo.GetReadme())
 	if err != nil {
 		return types.ErrMsg{err}
 	}
@@ -95,9 +89,9 @@ func (b *Bubble) setupCmd() tea.Msg {
 }
 
 func (b *Bubble) glamourize(md string) (string, error) {
-	w := b.width - b.widthMargin // - repoBody.GetHorizontalFrameSize()
-	if w > glamourMaxWidth {
-		w = glamourMaxWidth
+	w := b.width - b.widthMargin
+	if w > types.GlamourMaxWidth {
+		w = types.GlamourMaxWidth
 	}
 	tr, err := glamour.NewTermRenderer(
 		glamour.WithStandardStyle("dark"),

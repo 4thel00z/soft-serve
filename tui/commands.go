@@ -7,9 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	gitui "github.com/charmbracelet/soft-serve/tui/bubbles/git"
-	gitstyle "github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	gitypes "github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
+	"github.com/charmbracelet/soft-serve/tui/bubbles/repo"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/selection"
 	gm "github.com/charmbracelet/wish/git"
 )
@@ -96,18 +95,24 @@ func (b *Bubble) menuEntriesFromSource() ([]MenuEntry, error) {
 	return mes, nil
 }
 
-func (b *Bubble) newMenuEntry(name string, repo string) (MenuEntry, error) {
-	me := MenuEntry{Name: name, Repo: repo}
-	if repo == "config" {
-		r, err := b.config.Source.GetRepo(repo)
-		if err != nil {
-			return me, err
-		}
+func (b *Bubble) newMenuEntry(name string, rn string) (MenuEntry, error) {
+	gr := &Repo{
+		name: rn,
+	}
+	me := MenuEntry{Name: name, Repo: rn}
+	r, err := b.config.Source.GetRepo(rn)
+	if err != nil {
+		return me, err
+	}
+	gr.repo = r.Repository
+	gr.readme = r.Readme
+	if rn == "config" {
 		md, err := templatize(r.Readme, b.config)
 		if err != nil {
 			return me, err
 		}
 		r.Readme = md
+		gr.readme = md
 	}
 	boxLeftWidth := b.styles.Menu.GetWidth() + b.styles.Menu.GetHorizontalFrameSize()
 	// TODO: also send this along with a tea.WindowSizeMsg
@@ -115,14 +120,14 @@ func (b *Bubble) newMenuEntry(name string, repo string) (MenuEntry, error) {
 		lipgloss.Height(b.footerView()) +
 		b.styles.RepoBody.GetVerticalFrameSize() +
 		b.styles.App.GetVerticalMargins()
-	gb := gitui.NewBubble(b.config.Host, b.config.Port, repo, b.config.Source, gitstyle.DefaultStyles(), b.width, boxLeftWidth, b.height, heightMargin)
-	initCmd := gb.Init()
+	rb := repo.NewBubble(rn, b.config.Host, b.config.Port, gr, b.styles, b.width, boxLeftWidth, b.height, heightMargin)
+	initCmd := rb.Init()
 	msg := initCmd()
 	switch msg := msg.(type) {
 	case gitypes.ErrMsg:
 		return me, fmt.Errorf("missing %s: %s", me.Repo, msg.Error)
 	}
-	me.bubble = gb
+	me.bubble = rb
 	return me, nil
 }
 
