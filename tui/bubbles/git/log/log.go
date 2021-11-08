@@ -193,6 +193,10 @@ func (b *Bubble) writePatch(fromTree *object.Tree, toTree *object.Tree, s io.Str
 	patch, err := toTree.PatchContext(ctx, fromTree)
 	if err == nil {
 		stats := patch.Stats()
+		if len(stats) > types.MaxDiffFiles {
+			s.WriteString("\n" + types.ErrDiffFilesTooLong.Error())
+			return
+		}
 		s.WriteString("\n" + b.renderStats(stats))
 		p := strings.Builder{}
 		ps := patch.String()
@@ -286,6 +290,13 @@ func (b *Bubble) renderStats(fileStats object.FileStats) string {
 	}
 
 	finalOutput := ""
+	maxNameLen := 0
+	maxDiffLen := 0
+	for _, fs := range fileStats {
+		maxNameLen = int(math.Max(float64(maxNameLen), float64(len(fs.Name))))
+		diffLen := fmt.Sprint(fs.Addition + fs.Deletion)
+		maxDiffLen = int(math.Max(float64(maxDiffLen), float64(len(diffLen))))
+	}
 	for _, fs := range fileStats {
 		addn := float64(fs.Addition)
 		deln := float64(fs.Deletion)
@@ -299,9 +310,10 @@ func (b *Bubble) renderStats(fileStats object.FileStats) string {
 		}
 		adds := strings.Repeat("+", addc)
 		dels := strings.Repeat("-", delc)
-		finalOutput += fmt.Sprintf("%s | %d %s%s\n",
-			fs.Name,
-			(fs.Addition + fs.Deletion),
+		diffLines := fmt.Sprint(fs.Addition + fs.Deletion)
+		finalOutput += fmt.Sprintf("%s | %s %s%s\n",
+			fs.Name+strings.Repeat(" ", maxNameLen-len(fs.Name)),
+			strings.Repeat(" ", maxDiffLen-len(diffLines))+diffLines,
 			b.style.LogCommitStatsAdd.Render(adds),
 			b.style.LogCommitStatsDel.Render(dels))
 	}

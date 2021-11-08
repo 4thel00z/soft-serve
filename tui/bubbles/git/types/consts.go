@@ -6,4 +6,5 @@ const (
 	GlamourMaxWidth  = 120
 	RepoNameMaxWidth = 32
 	MaxDiffLines     = 1000
+	MaxDiffFiles     = 100
 )
