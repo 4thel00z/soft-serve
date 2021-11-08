@@ -117,12 +117,7 @@ func (b *Bubble) Help() []types.HelpEntry {
 	if b.page != logPage {
 		h = append(h, types.HelpEntry{"L", "log"})
 	}
-	switch b.page {
-	case aboutPage:
-		h = append(h, types.HelpEntry{"f/b", "pgup/pgdown"})
-	case logPage:
-		h = append(h, b.boxes[logPage].(*log.Bubble).Help()...)
-	}
+	h = append(h, b.boxes[logPage].(types.HelpableBubble).Help()...)
 	return h
 }
 

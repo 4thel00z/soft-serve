@@ -78,6 +78,12 @@ func (b *Bubble) View() string {
 	return b.readmeViewport.View()
 }
 
+func (b *Bubble) Help() []types.HelpEntry {
+	return []types.HelpEntry{
+		{"f/b", "pgup/pgdown"},
+	}
+}
+
 func (b *Bubble) setupCmd() tea.Msg {
 	md, err := b.glamourize(b.repo.Readme)
 	if err != nil {

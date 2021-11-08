@@ -109,7 +109,6 @@ func (b *Bubble) newMenuEntry(name string, repo string) (MenuEntry, error) {
 		}
 		r.Readme = md
 	}
-	// width := b.width
 	boxLeftWidth := b.styles.Menu.GetWidth() + b.styles.Menu.GetHorizontalFrameSize()
 	// TODO: also send this along with a tea.WindowSizeMsg
 	var heightMargin = lipgloss.Height(b.headerView()) +
