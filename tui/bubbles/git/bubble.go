@@ -48,9 +48,9 @@ type Bubble struct {
 	boxes        []tea.Model
 }
 
-func NewBubble(r types.Repo, styles *style.Styles, width, wm, height, hm int) *Bubble {
+func NewBubble(repo types.Repo, styles *style.Styles, width, wm, height, hm int) *Bubble {
 	b := &Bubble{
-		repo:         r,
+		repo:         repo,
 		page:         aboutPage,
 		width:        width,
 		widthMargin:  wm,
@@ -60,8 +60,8 @@ func NewBubble(r types.Repo, styles *style.Styles, width, wm, height, hm int) *B
 		boxes:        make([]tea.Model, 4),
 	}
 	heightMargin := hm + lipgloss.Height(b.headerView())
-	b.boxes[aboutPage] = about.NewBubble(r, b.style, b.width, wm, b.height, heightMargin)
-	b.boxes[logPage] = log.NewBubble(r, b.style, width, wm, height, heightMargin)
+	b.boxes[aboutPage] = about.NewBubble(repo, b.style, b.width, wm, b.height, heightMargin)
+	b.boxes[logPage] = log.NewBubble(repo, b.style, width, wm, height, heightMargin)
 	return b
 }
 
@@ -102,6 +102,10 @@ func (b *Bubble) Help() []types.HelpEntry {
 	}
 	h = append(h, b.boxes[logPage].(types.HelpableBubble).Help()...)
 	return h
+}
+
+func (b *Bubble) Reference() types.ReferenceName {
+	return types.ReferenceName(b.repo.GetReference().Name())
 }
 
 func (b *Bubble) Styles() *style.Styles {

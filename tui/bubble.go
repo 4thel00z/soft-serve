@@ -188,7 +188,14 @@ func (b Bubble) footerView() string {
 			fmt.Fprint(w, b.styles.HelpDivider)
 		}
 	}
-	return b.styles.Footer.Copy().Width(b.width).Render(w.String())
+	branch := ""
+	if b.state == loadedState {
+		branch = b.boxes[1].(*repo.Bubble).Reference().Short()
+	}
+	footer := b.styles.Footer.Copy().Width(b.width - b.styles.App.GetHorizontalFrameSize())
+	left := w.String()
+	right := b.styles.Branch.Width(footer.GetWidth() - lipgloss.Width(left)).Align(lipgloss.Right).Render(branch)
+	return footer.Render(lipgloss.JoinHorizontal(lipgloss.Bottom, left, right))
 }
 
 func (b Bubble) errorView() string {

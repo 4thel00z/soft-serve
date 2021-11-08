@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"sort"
-
 	gitypes "github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -20,11 +18,11 @@ func (r *Repo) Name() string {
 	return r.name
 }
 
-func (r *Repo) GetRef() *plumbing.Reference {
+func (r *Repo) GetReference() *plumbing.Reference {
 	return r.ref
 }
 
-func (r *Repo) SetRef(ref *plumbing.Reference) {
+func (r *Repo) SetReference(ref *plumbing.Reference) {
 	r.ref = ref
 }
 
@@ -34,18 +32,20 @@ func (r *Repo) Repository() *git.Repository {
 
 func (r *Repo) GetCommits(limit int) gitypes.Commits {
 	commits := gitypes.Commits{}
-	ci, err := r.repo.CommitObjects()
+	l, err := r.repo.Log(&git.LogOptions{
+		Order: git.LogOrderCommitterTime,
+		From:  r.ref.Hash(),
+	})
 	if err != nil {
 		return nil
 	}
-	err = ci.ForEach(func(c *object.Commit) error {
+	err = l.ForEach(func(c *object.Commit) error {
 		commits = append(commits, &gitypes.Commit{c})
 		return nil
 	})
 	if err != nil {
 		return nil
 	}
-	sort.Sort(commits)
 	if limit <= 0 || limit > len(commits) {
 		limit = len(commits)
 	}

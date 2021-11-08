@@ -28,7 +28,7 @@ type Bubble struct {
 	widthMargin  int
 	height       int
 	heightMargin int
-	box          tea.Model
+	box          *gitui.Bubble
 
 	Active bool
 }
@@ -61,12 +61,12 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		b.box = gitui.NewBubble(b.repo, gitstyle.DefaultStyles(), b.width, b.widthMargin, b.height, b.heightMargin+lipgloss.Height(b.headerView()))
 	}
 	box, cmd := b.box.Update(msg)
-	b.box = box
+	b.box = box.(*gitui.Bubble)
 	return b, cmd
 }
 
 func (b *Bubble) Help() []gitypes.HelpEntry {
-	return b.box.(*gitui.Bubble).Help()
+	return b.box.Help()
 }
 
 func (b Bubble) headerView() string {
@@ -120,6 +120,10 @@ func (b *Bubble) View() string {
 		Height(b.height - b.heightMargin - lipgloss.Height(header)).
 		Render(b.box.View())
 	return header + body
+}
+
+func (b *Bubble) Reference() gitypes.ReferenceName {
+	return b.box.Reference()
 }
 
 func (b Bubble) sshAddress() string {

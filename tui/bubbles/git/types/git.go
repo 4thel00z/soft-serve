@@ -6,10 +6,20 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
+type ReferenceName plumbing.ReferenceName
+
+func (n ReferenceName) String() string {
+	return plumbing.ReferenceName(n).String()
+}
+
+func (n ReferenceName) Short() string {
+	return plumbing.ReferenceName(n).Short()
+}
+
 type Repo interface {
 	Name() string
-	GetRef() *plumbing.Reference
-	SetRef(*plumbing.Reference)
+	GetReference() *plumbing.Reference
+	SetReference(*plumbing.Reference)
 	GetReadme() string
 	GetCommits(limit int) Commits
 	Repository() *git.Repository

@@ -104,15 +104,18 @@ func (b *Bubble) newMenuEntry(name string, rn string) (MenuEntry, error) {
 	if err != nil {
 		return me, err
 	}
-	gr.repo = r.Repository
-	gr.readme = r.Readme
 	if rn == "config" {
 		md, err := templatize(r.Readme, b.config)
 		if err != nil {
 			return me, err
 		}
 		r.Readme = md
-		gr.readme = md
+	}
+	gr.repo = r.Repository
+	gr.readme = r.Readme
+	gr.ref, err = r.Repository.Head()
+	if err != nil {
+		return me, err
 	}
 	boxLeftWidth := b.styles.Menu.GetWidth() + b.styles.Menu.GetHorizontalFrameSize()
 	// TODO: also send this along with a tea.WindowSizeMsg

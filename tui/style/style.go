@@ -31,6 +31,7 @@ type Styles struct {
 	RepoBody     lipgloss.Style
 
 	Footer      lipgloss.Style
+	Branch      lipgloss.Style
 	HelpKey     lipgloss.Style
 	HelpValue   lipgloss.Style
 	HelpDivider lipgloss.Style
@@ -132,6 +133,9 @@ func DefaultStyles() *Styles {
 
 	s.Footer = lipgloss.NewStyle().
 		MarginTop(1)
+
+	s.Branch = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252"))
 
 	s.HelpKey = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("241"))
