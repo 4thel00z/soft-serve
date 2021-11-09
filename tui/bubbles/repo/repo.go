@@ -10,6 +10,7 @@ import (
 	gitstyle "github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	gitypes "github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	"github.com/charmbracelet/soft-serve/tui/style"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/muesli/reflow/truncate"
 	"github.com/muesli/reflow/wrap"
 )
@@ -122,7 +123,7 @@ func (b *Bubble) View() string {
 	return header + body
 }
 
-func (b *Bubble) Reference() gitypes.ReferenceName {
+func (b *Bubble) Reference() plumbing.ReferenceName {
 	return b.box.Reference()
 }
 

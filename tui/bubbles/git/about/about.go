@@ -50,6 +50,11 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return b, nil
 		}
 		b.readmeViewport.Viewport.SetContent(md)
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "A":
+			b.GotoTop()
+		}
 	}
 	rv, cmd := b.readmeViewport.Update(msg)
 	b.readmeViewport = rv.(*vp.ViewportBubble)

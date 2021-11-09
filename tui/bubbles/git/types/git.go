@@ -6,16 +6,6 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
-type ReferenceName plumbing.ReferenceName
-
-func (n ReferenceName) String() string {
-	return plumbing.ReferenceName(n).String()
-}
-
-func (n ReferenceName) Short() string {
-	return plumbing.ReferenceName(n).Short()
-}
-
 type Repo interface {
 	Name() string
 	GetReference() *plumbing.Reference

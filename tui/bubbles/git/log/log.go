@@ -87,26 +87,21 @@ type Bubble struct {
 
 // TODO enable filter
 func NewBubble(repo types.Repo, style *style.Styles, width, widthMargin, height, heightMargin int) *Bubble {
-	items := make([]list.Item, 0)
-	for _, c := range repo.GetCommits(0) {
-		items = append(items, item{c})
+	styles := "light"
+	if termenv.HasDarkBackground() {
+		styles = "dark"
 	}
-	l := list.NewModel(items, itemDelegate{style}, width-widthMargin, height-heightMargin)
+	l := list.NewModel([]list.Item{}, itemDelegate{style}, width-widthMargin, height-heightMargin)
 	l.SetShowFilter(false)
 	l.SetShowHelp(false)
 	l.SetShowPagination(false)
 	l.SetShowStatusBar(false)
 	l.SetShowTitle(false)
-	styles := "light"
-	if termenv.HasDarkBackground() {
-		styles = "dark"
-	}
 	b := &Bubble{
 		commitViewport: &vp.ViewportBubble{
 			Viewport: &viewport.Model{},
 		},
 		repo:         repo,
-		list:         l,
 		style:        style,
 		pageView:     logView,
 		width:        width,
@@ -117,9 +112,18 @@ func NewBubble(repo types.Repo, style *style.Styles, width, widthMargin, height,
 			ColorProfile: termenv.TrueColor,
 			Styles:       *glamour.DefaultStyles[styles],
 		}),
+		list: l,
 	}
 	b.SetSize(width, height)
 	return b
+}
+
+func (b *Bubble) UpdateItems() tea.Cmd {
+	items := make([]list.Item, 0)
+	for _, c := range b.repo.GetCommits(0) {
+		items = append(items, item{c})
+	}
+	return b.list.SetItems(items)
 }
 
 func (b *Bubble) Help() []types.HelpEntry {
@@ -161,6 +165,10 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "L":
+			b.pageView = logView
+			b.list.Select(0)
+			cmds = append(cmds, b.UpdateItems())
 		case "down", "j":
 			if b.pageView == logView {
 				b.list.CursorDown()

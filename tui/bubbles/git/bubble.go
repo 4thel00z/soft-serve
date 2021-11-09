@@ -5,8 +5,10 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/about"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/log"
+	"github.com/charmbracelet/soft-serve/tui/bubbles/git/refs"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
+	"github.com/go-git/go-git/v5/plumbing"
 )
 
 const (
@@ -61,6 +63,7 @@ func NewBubble(repo types.Repo, styles *style.Styles, width, wm, height, hm int)
 	}
 	heightMargin := hm + lipgloss.Height(b.headerView())
 	b.boxes[aboutPage] = about.NewBubble(repo, b.style, b.width, wm, b.height, heightMargin)
+	b.boxes[refsPage] = refs.NewBubble(repo, b.style, b.width, wm, b.height, heightMargin)
 	b.boxes[logPage] = log.NewBubble(repo, b.style, width, wm, height, heightMargin)
 	return b
 }
@@ -76,6 +79,8 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "A":
 			b.page = aboutPage
+		case "R":
+			b.page = refsPage
 		case "L":
 			b.page = logPage
 		}
@@ -97,6 +102,9 @@ func (b *Bubble) Help() []types.HelpEntry {
 	if b.page != aboutPage {
 		h = append(h, types.HelpEntry{"A", "about"})
 	}
+	if b.page != refsPage {
+		h = append(h, types.HelpEntry{"R", "refs"})
+	}
 	if b.page != logPage {
 		h = append(h, types.HelpEntry{"L", "log"})
 	}
@@ -104,8 +112,8 @@ func (b *Bubble) Help() []types.HelpEntry {
 	return h
 }
 
-func (b *Bubble) Reference() types.ReferenceName {
-	return types.ReferenceName(b.repo.GetReference().Name())
+func (b *Bubble) Reference() plumbing.ReferenceName {
+	return b.repo.GetReference().Name()
 }
 
 func (b *Bubble) Styles() *style.Styles {
