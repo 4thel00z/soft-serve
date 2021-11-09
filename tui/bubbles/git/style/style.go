@@ -28,6 +28,8 @@ type Styles struct {
 	LogCommitBody     lipgloss.Style
 	LogCommitStatsAdd lipgloss.Style
 	LogCommitStatsDel lipgloss.Style
+
+	TreeFileDir lipgloss.Style
 }
 
 func DefaultStyles() *Styles {
@@ -127,6 +129,9 @@ func DefaultStyles() *Styles {
 	s.LogCommitStatsDel = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#FD5B5B")).
 		Bold(true)
+
+	s.TreeFileDir = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#00AAFF"))
 
 	return s
 }

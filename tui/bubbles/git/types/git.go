@@ -13,6 +13,7 @@ type Repo interface {
 	GetReadme() string
 	GetCommits(limit int) Commits
 	Repository() *git.Repository
+	Tree(path string) (*object.Tree, error)
 }
 
 type Commit struct {

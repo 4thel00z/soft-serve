@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/log"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/refs"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
+	"github.com/charmbracelet/soft-serve/tui/bubbles/git/tree"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	"github.com/go-git/go-git/v5/plumbing"
 )
@@ -65,6 +66,7 @@ func NewBubble(repo types.Repo, styles *style.Styles, width, wm, height, hm int)
 	b.boxes[aboutPage] = about.NewBubble(repo, b.style, b.width, wm, b.height, heightMargin)
 	b.boxes[refsPage] = refs.NewBubble(repo, b.style, b.width, wm, b.height, heightMargin)
 	b.boxes[logPage] = log.NewBubble(repo, b.style, width, wm, height, heightMargin)
+	b.boxes[treePage] = tree.NewBubble(repo, b.style, width, wm, height, heightMargin)
 	return b
 }
 
@@ -83,6 +85,8 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			b.page = refsPage
 		case "L":
 			b.page = logPage
+		case "T":
+			b.page = treePage
 		}
 	case tea.WindowSizeMsg:
 		b.width = msg.Width
@@ -93,7 +97,6 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
-	b.boxes[b.page] = m
 	return b, tea.Batch(cmds...)
 }
 
@@ -108,7 +111,10 @@ func (b *Bubble) Help() []types.HelpEntry {
 	if b.page != logPage {
 		h = append(h, types.HelpEntry{"L", "log"})
 	}
-	h = append(h, b.boxes[logPage].(types.HelpableBubble).Help()...)
+	if b.page != treePage {
+		h = append(h, types.HelpEntry{"T", "tree"})
+	}
+	h = append(h, b.boxes[b.page].(types.HelpableBubble).Help()...)
 	return h
 }
 

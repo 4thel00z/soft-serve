@@ -11,13 +11,11 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/glamour"
 	gansi "github.com/charmbracelet/glamour/ansi"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
 	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/muesli/termenv"
 )
 
 var (
@@ -87,10 +85,6 @@ type Bubble struct {
 
 // TODO enable filter
 func NewBubble(repo types.Repo, style *style.Styles, width, widthMargin, height, heightMargin int) *Bubble {
-	styles := "light"
-	if termenv.HasDarkBackground() {
-		styles = "dark"
-	}
 	l := list.NewModel([]list.Item{}, itemDelegate{style}, width-widthMargin, height-heightMargin)
 	l.SetShowFilter(false)
 	l.SetShowHelp(false)
@@ -108,11 +102,8 @@ func NewBubble(repo types.Repo, style *style.Styles, width, widthMargin, height,
 		widthMargin:  widthMargin,
 		height:       height,
 		heightMargin: heightMargin,
-		rctx: gansi.NewRenderContext(gansi.Options{
-			ColorProfile: termenv.TrueColor,
-			Styles:       *glamour.DefaultStyles[styles],
-		}),
-		list: l,
+		rctx:         types.RenderCtx,
+		list:         l,
 	}
 	b.SetSize(width, height)
 	return b

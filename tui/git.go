@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"path/filepath"
+
 	gitypes "github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
@@ -28,6 +30,22 @@ func (r *Repo) SetReference(ref *plumbing.Reference) {
 
 func (r *Repo) Repository() *git.Repository {
 	return r.repo
+}
+
+func (r *Repo) Tree(path string) (*object.Tree, error) {
+	path = filepath.Clean(path)
+	c, err := r.repo.CommitObject(r.ref.Hash())
+	if err != nil {
+		return nil, err
+	}
+	t, err := c.Tree()
+	if err != nil {
+		return nil, err
+	}
+	if path == "." {
+		return t, nil
+	}
+	return t.Tree(path)
 }
 
 func (r *Repo) GetCommits(limit int) gitypes.Commits {
