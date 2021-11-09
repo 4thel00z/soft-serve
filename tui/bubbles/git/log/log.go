@@ -153,6 +153,9 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		b.SetSize(msg.Width, msg.Height)
+		if b.pageView == commitView {
+			b.commitViewport.Viewport.SetContent(b.commitView())
+		}
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -180,9 +183,11 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
-	rv, cmd := b.commitViewport.Update(msg)
-	b.commitViewport = rv.(*vp.ViewportBubble)
-	cmds = append(cmds, cmd)
+	if b.pageView == commitView {
+		rv, cmd := b.commitViewport.Update(msg)
+		b.commitViewport = rv.(*vp.ViewportBubble)
+		cmds = append(cmds, cmd)
+	}
 	return b, tea.Batch(cmds...)
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	gansi "github.com/charmbracelet/glamour/ansi"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
@@ -180,6 +181,11 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		b.SetSize(msg.Width, msg.Height)
+		if b.pageView == fileView {
+			item := b.list.SelectedItem().(item)
+			content := b.currentFileView(item)
+			b.fileViewport.Viewport.SetContent(content)
+		}
 
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -201,23 +207,9 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if item.TreeEntry.Mode == filemode.Dir {
 					cmds = append(cmds, b.UpdateItems())
 				} else if item.TreeEntry.Mode == filemode.Regular && item.File != nil {
-					c, err := item.File.Contents()
-					if err == nil {
-						b.pageView = fileView
-						lexer := lexers.Match(b.path)
-						lang := ""
-						if lexer != nil && lexer.Config() != nil {
-							lang = lexer.Config().Name
-						}
-						formatter := &gansi.CodeBlockElement{
-							Code:     c,
-							Language: lang,
-						}
-						s := strings.Builder{}
-						formatter.Render(&s, types.RenderCtx)
-						b.fileViewport.Viewport.SetContent(s.String())
-						b.fileViewport.Viewport.GotoTop()
-					}
+					content := b.currentFileView(item)
+					b.fileViewport.Viewport.SetContent(content)
+					b.fileViewport.Viewport.GotoTop()
 				}
 			}
 		case "esc":
@@ -229,9 +221,11 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, b.UpdateItems())
 		}
 	}
-	rv, cmd := b.fileViewport.Update(msg)
-	b.fileViewport = rv.(*vp.ViewportBubble)
-	cmds = append(cmds, cmd)
+	if b.pageView == fileView {
+		rv, cmd := b.fileViewport.Update(msg)
+		b.fileViewport = rv.(*vp.ViewportBubble)
+		cmds = append(cmds, cmd)
+	}
 	return b, tea.Batch(cmds...)
 }
 
@@ -244,4 +238,29 @@ func (b *Bubble) View() string {
 	default:
 		return ""
 	}
+}
+
+func (b *Bubble) currentFileView(item item) string {
+	c, err := item.File.Contents()
+	if err == nil {
+		b.pageView = fileView
+		lexer := lexers.Match(b.path)
+		lang := ""
+		if lexer != nil && lexer.Config() != nil {
+			lang = lexer.Config().Name
+		}
+		formatter := &gansi.CodeBlockElement{
+			Code:     c,
+			Language: lang,
+		}
+		s := strings.Builder{}
+		formatter.Render(&s, types.RenderCtx)
+
+		w := b.width - b.widthMargin
+		if w > types.GlamourMaxWidth {
+			w = types.GlamourMaxWidth
+		}
+		return lipgloss.NewStyle().MaxWidth(w).Render(s.String())
+	}
+	return ""
 }

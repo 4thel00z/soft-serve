@@ -140,7 +140,10 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			b.list.CursorUp()
 		case "enter":
-			b.SetBranch(b.list.SelectedItem().(item).Reference)
+			if b.list.Index() > 0 {
+				ref := b.list.SelectedItem().(item).Reference
+				b.SetBranch(ref)
+			}
 		}
 	}
 	return b, tea.Batch(cmds...)

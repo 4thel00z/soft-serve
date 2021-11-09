@@ -112,7 +112,7 @@ func DefaultStyles() *Styles {
 		Foreground(lipgloss.Color("#E8E8A8"))
 
 	s.LogCommit = lipgloss.NewStyle().
-		Margin(1, 2)
+		Margin(0, 2)
 
 	s.LogCommitHash = s.LogItemHash.Copy().
 		Bold(true)

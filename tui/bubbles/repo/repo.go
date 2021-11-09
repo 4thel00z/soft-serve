@@ -59,7 +59,6 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		b.width = msg.Width
 		b.height = msg.Height
-		b.box = gitui.NewBubble(b.repo, gitstyle.DefaultStyles(), b.width, b.widthMargin, b.height, b.heightMargin+lipgloss.Height(b.headerView()))
 	}
 	box, cmd := b.box.Update(msg)
 	b.box = box.(*gitui.Bubble)

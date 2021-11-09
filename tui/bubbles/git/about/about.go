@@ -74,7 +74,8 @@ func (b *Bubble) GotoTop() {
 }
 
 func (b *Bubble) View() string {
-	return b.readmeViewport.View()
+	rs := lipgloss.NewStyle().Width(b.width - b.widthMargin).Height(b.height - b.heightMargin)
+	return rs.Render(b.readmeViewport.View())
 }
 
 func (b *Bubble) Help() []types.HelpEntry {
