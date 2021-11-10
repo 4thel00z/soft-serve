@@ -294,13 +294,6 @@ func (b *Bubble) renderStats(fileStats object.FileStats) string {
 	}
 
 	finalOutput := ""
-	maxNameLen := 0
-	maxDiffLen := 0
-	for _, fs := range fileStats {
-		maxNameLen = int(math.Max(float64(maxNameLen), float64(len(fs.Name))))
-		diffLen := fmt.Sprint(fs.Addition + fs.Deletion)
-		maxDiffLen = int(math.Max(float64(maxDiffLen), float64(len(diffLen))))
-	}
 	for _, fs := range fileStats {
 		addn := float64(fs.Addition)
 		deln := float64(fs.Deletion)
@@ -315,9 +308,10 @@ func (b *Bubble) renderStats(fileStats object.FileStats) string {
 		adds := strings.Repeat("+", addc)
 		dels := strings.Repeat("-", delc)
 		diffLines := fmt.Sprint(fs.Addition + fs.Deletion)
+		totalDiffLines := fmt.Sprint(int(longestTotalChange))
 		finalOutput += fmt.Sprintf("%s | %s %s%s\n",
-			fs.Name+strings.Repeat(" ", maxNameLen-len(fs.Name)),
-			strings.Repeat(" ", maxDiffLen-len(diffLines))+diffLines,
+			fs.Name+strings.Repeat(" ", int(longestLength)-len(fs.Name)),
+			strings.Repeat(" ", len(totalDiffLines)-len(diffLines))+diffLines,
 			b.style.LogCommitStatsAdd.Render(adds),
 			b.style.LogCommitStatsDel.Render(dels))
 	}
