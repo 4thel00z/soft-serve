@@ -4,10 +4,10 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
+	"github.com/muesli/reflow/wrap"
 )
 
 type Bubble struct {
@@ -74,8 +74,7 @@ func (b *Bubble) GotoTop() {
 }
 
 func (b *Bubble) View() string {
-	rs := lipgloss.NewStyle().Width(b.width - b.widthMargin).Height(b.height - b.heightMargin)
-	return rs.Render(b.readmeViewport.View())
+	return b.readmeViewport.View()
 }
 
 func (b *Bubble) Help() []types.HelpEntry {
@@ -111,14 +110,5 @@ func (b *Bubble) glamourize(md string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// For now, truncate long lines in Glamour that would otherwise break the
-	// layout when wrapping. This is very likely due to #43 in Reflow, which
-	// has to do with a bug in the way lines longer than the given width are
-	// wrapped.
-	//
-	//     https://github.com/muesli/reflow/issues/43
-	//
-	// TODO: solve this upstream in Glamour/Reflow.
-	mdt = lipgloss.NewStyle().MaxWidth(w).Render(mdt)
-	return mdt, nil
+	return wrap.String(mdt, w), nil
 }

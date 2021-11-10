@@ -12,13 +12,13 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	gansi "github.com/charmbracelet/glamour/ansi"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/filemode"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/muesli/reflow/wrap"
 )
 
 type pageView int
@@ -130,7 +130,7 @@ func (b *Bubble) Init() tea.Cmd {
 func (b *Bubble) SetSize(width, height int) {
 	b.width = width
 	b.height = height
-	b.fileViewport.Viewport.Width = width - b.widthMargin
+	b.fileViewport.Viewport.Width = width - b.widthMargin - 2
 	b.fileViewport.Viewport.Height = height - b.heightMargin
 	b.list.SetSize(width-b.widthMargin, height-b.heightMargin)
 }
@@ -256,11 +256,7 @@ func (b *Bubble) currentFileView(item item) string {
 		s := strings.Builder{}
 		formatter.Render(&s, types.RenderCtx)
 
-		w := b.width - b.widthMargin
-		if w > types.GlamourMaxWidth {
-			w = types.GlamourMaxWidth
-		}
-		return lipgloss.NewStyle().MaxWidth(w).Render(s.String())
+		return wrap.String(s.String(), b.width-b.widthMargin)
 	}
 	return ""
 }

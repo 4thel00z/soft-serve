@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/muesli/reflow/wrap"
 )
 
 var (
@@ -239,12 +240,7 @@ func (b *Bubble) commitView() string {
 			b.writePatch(fromTree, toTree, &s)
 		}
 	}
-
-	w := b.width - b.widthMargin
-	if w > types.GlamourMaxWidth {
-		w = types.GlamourMaxWidth
-	}
-	return b.style.LogCommit.MaxWidth(w).Render(s.String())
+	return wrap.String(s.String(), b.width-b.widthMargin)
 }
 
 // copied from https://github.com/go-git/go-git/blob/v5.4.2/plumbing/object/patch.go#L241

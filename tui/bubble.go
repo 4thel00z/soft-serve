@@ -195,7 +195,7 @@ func (b Bubble) footerView() string {
 	footer := b.styles.Footer.Copy().Width(b.width - b.styles.App.GetHorizontalFrameSize())
 	left := w.String()
 	right := b.styles.Branch.Width(footer.GetWidth() - lipgloss.Width(left)).Align(lipgloss.Right).Render(branch)
-	return footer.Render(lipgloss.JoinHorizontal(lipgloss.Bottom, left, right))
+	return footer.Render(left + right)
 }
 
 func (b Bubble) errorView() string {
