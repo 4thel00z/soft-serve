@@ -29,7 +29,9 @@ type Styles struct {
 	LogCommitStatsAdd lipgloss.Style
 	LogCommitStatsDel lipgloss.Style
 
-	TreeFileDir lipgloss.Style
+	TreeFileDir  lipgloss.Style
+	TreeFileMode lipgloss.Style
+	TreeFileSize lipgloss.Style
 }
 
 func DefaultStyles() *Styles {
@@ -132,6 +134,12 @@ func DefaultStyles() *Styles {
 
 	s.TreeFileDir = lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#00AAFF"))
+
+	s.TreeFileMode = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("#777777"))
+
+	s.TreeFileSize = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252"))
 
 	return s
 }

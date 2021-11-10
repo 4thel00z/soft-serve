@@ -12,6 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	gansi "github.com/charmbracelet/glamour/ansi"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/style"
 	"github.com/charmbracelet/soft-serve/tui/bubbles/git/types"
 	vp "github.com/charmbracelet/soft-serve/tui/bubbles/git/viewport"
@@ -76,13 +77,22 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	if i.Mode() == filemode.Dir {
 		name = d.style.TreeFileDir.Render(name)
 	}
-	if index == m.Index() {
-		fmt.Fprint(w, d.style.LogItemSelector.MarginLeft(1).Render(">")+
-			d.style.LogItemActive.MarginLeft(1).Render(name))
-	} else {
-		fmt.Fprint(w, d.style.LogItemSelector.MarginLeft(1).Render(" ")+
-			d.style.LogItemInactive.MarginLeft(1).Render(name))
+	size := ""
+	if i.File != nil {
+		size = d.style.TreeFileSize.MarginLeft(1).Render(fmt.Sprintf("%d", i.File.Size))
 	}
+	var cs lipgloss.Style
+	mode, _ := i.Mode().ToOSFileMode()
+	if index == m.Index() {
+		cs = d.style.LogItemActive
+		fmt.Fprint(w, d.style.LogItemSelector.MarginLeft(1).Render(">"))
+	} else {
+		cs = d.style.LogItemInactive
+		fmt.Fprint(w, d.style.LogItemSelector.MarginLeft(1).Render(" "))
+	}
+	fmt.Fprint(w, d.style.TreeFileMode.MarginLeft(1).Render(mode.String())+
+		cs.MarginLeft(1).Render(name)+
+		size)
 }
 
 type Bubble struct {
