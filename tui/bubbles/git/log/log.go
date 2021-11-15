@@ -240,7 +240,7 @@ func (b *Bubble) commitView() string {
 			b.writePatch(fromTree, toTree, &s)
 		}
 	}
-	return b.style.LogCommit.Render(wrap.String(s.String(), b.width-b.widthMargin))
+	return b.style.LogCommit.Render(wrap.String(s.String(), b.width-b.widthMargin-b.style.LogCommit.GetHorizontalFrameSize()*2))
 }
 
 // copied from https://github.com/go-git/go-git/blob/v5.4.2/plumbing/object/patch.go#L241
