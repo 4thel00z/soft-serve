@@ -140,7 +140,7 @@ func (b *Bubble) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "up", "k":
 			b.list.CursorUp()
 		case "enter":
-			if b.list.Index() > 0 {
+			if b.list.Index() >= 0 {
 				ref := b.list.SelectedItem().(item).Reference
 				b.SetBranch(ref)
 			}
