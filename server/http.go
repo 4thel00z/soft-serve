@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/soft/config"
 	appCfg "github.com/charmbracelet/soft/internal/config"
@@ -47,17 +48,22 @@ func (s *HTTPServer) Start() error {
 }
 
 func (s *HTTPServer) handleGit(w http.ResponseWriter, r *http.Request) {
+	ua := r.Header.Get("User-Agent")
 	repo := pat.Param(r, "repo")
 	access := s.ac.AuthRepo(repo, nil)
-	if access < git.ReadOnlyAccess || !s.ac.AllowKeyless {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
 	path := pattern.Path(r.Context())
 	stat, err := os.Stat(filepath.Join(s.cfg.RepoPath, repo, path))
 	// Restrict access to files
 	if err != nil || stat.IsDir() {
 		http.NotFound(w, r)
+		return
+	}
+	if !strings.HasPrefix(strings.ToLower(ua), "git") {
+		http.Error(w, fmt.Sprintf("%d Bad Request", http.StatusBadRequest), http.StatusBadRequest)
+		return
+	}
+	if access < git.ReadOnlyAccess || !s.ac.AllowKeyless {
+		http.Error(w, fmt.Sprintf("%d Unauthorized", http.StatusUnauthorized), http.StatusUnauthorized)
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
